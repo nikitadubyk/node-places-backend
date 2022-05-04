@@ -5,6 +5,7 @@ const placesRoutes = require('./routes/places-routes')
 const usersRoutes = require('./routes/users-routes')
 const HttpError = require('./models/https-error')
 
+const mongoose = require('mongoose')
 const app = express()
 
 app.use(bodyParser.json())
@@ -26,4 +27,11 @@ app.use((error, req, res, next) => {
     res.json({ message: error.message || 'An unknown error!' })
 })
 
-app.listen(5000)
+mongoose
+    .connect(
+        'mongodb+srv://nikita_dubyk:UEyl0C0AUbJhNVz9@cluster0.sd3bq.mongodb.net/places?retryWrites=true&w=majority'
+    )
+    .then(() => {
+        app.listen(5000)
+    })
+    .catch(err => console.log(err))
