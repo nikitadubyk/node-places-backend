@@ -1,22 +1,6 @@
-const { v4: uuidv4 } = require('uuid')
 const HttpError = require('../models/https-error')
 const { validationResult } = require('express-validator')
 const User = require('../models/user')
-
-const DUMMY_USERS = [
-    {
-        id: 'u1',
-        email: 'test@mail.ru',
-        password: 'testPassword',
-        name: 'Nikita',
-    },
-    {
-        id: 'u2',
-        email: 'test234@mail.ru',
-        password: 'secondTest',
-        name: 'Max',
-    },
-]
 
 const getAllUsers = async (req, res, next) => {
     let users

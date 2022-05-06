@@ -1,5 +1,4 @@
 const HttpError = require('../models/https-error')
-const { v4: uuidv4 } = require('uuid')
 const { validationResult } = require('express-validator')
 const getCoordsForAddress = require('../utils/location')
 const Place = require('../models/place')
@@ -149,14 +148,29 @@ const patchPlace = async (req, res, next) => {
 const deletePlace = async (req, res, next) => {
     const placeId = req.params.pid
 
-    let place = await Place.findById(placeId)
+    let place
+
+    try {
+        place = await Place.findById(placeId).populate('creator')
+    } catch (error) {
+        const err = new HttpError(
+            'Something went wrong, could not update place',
+            500
+        )
+        return next(err)
+    }
 
     if (!place) {
         return next(new HttpError('Could not find a place with that id', 404))
     }
 
     try {
-        await place.remove()
+        const sess = await mongoose.startSession()
+        sess.startTransaction()
+        await place.remove({ session: sess })
+        place.creator.places.pull(place)
+        await place.creator.save({ session: sess })
+        await sess.commitTransaction()
     } catch (error) {
         const err = new HttpError(
             'Something went wrong, could not delete place',
