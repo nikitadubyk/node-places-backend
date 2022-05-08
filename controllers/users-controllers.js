@@ -61,7 +61,7 @@ const createUser = async (req, res, next) => {
         return next(err)
     }
 
-    res.status(200).json({ users: createdUser.toObject({ getters: true }) })
+    res.status(200).json({ user: createdUser.toObject({ getters: true }) })
 }
 
 const login = async (req, res, next) => {
@@ -78,18 +78,21 @@ const login = async (req, res, next) => {
     let correctUser
 
     try {
-        correctUser = await User.find({ email: email })
+        correctUser = await User.findOne({ email: email })
     } catch (error) {
         return next(new HttpError('Login failed, try again!', 500))
     }
 
-    if (!correctUser && correctUser.password !== password) {
+    if (!correctUser || correctUser.password !== password) {
         return next(
-            new HttpError('Could not identify user, something to be wrong', 401)
+            new HttpError('Could not identify user, something to be wrong', 500)
         )
     }
 
-    res.status(200).json({ message: 'You loggin! Welcome!' })
+    res.status(200).json({
+        message: 'You loggin! Welcome!',
+        existingUser: correctUser.toObject({ getters: true }),
+    })
 }
 
 module.exports = { getAllUsers, createUser, login }
