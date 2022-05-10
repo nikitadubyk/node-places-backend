@@ -1,5 +1,6 @@
 const express = require('express')
 const { check } = require('express-validator')
+const fileUpload = require('../middleware/file-upload')
 
 const {
     getAllUsers,
@@ -12,6 +13,7 @@ router.get('/', getAllUsers)
 
 router.post(
     '/singup',
+    fileUpload.single('image'),
     [
         check('email').normalizeEmail().isEmail(),
         check('password').isLength({ min: 6 }),
