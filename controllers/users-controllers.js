@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs')
 const HttpError = require('../models/https-error')
 const { validationResult } = require('express-validator')
 const User = require('../models/user')
@@ -46,9 +47,16 @@ const createUser = async (req, res, next) => {
         )
     }
 
+    let hashPassword
+    try {
+        hashPassword = await bcrypt.hash(password, 12)
+    } catch (error) {
+        return next('Create user is failed, try again', 500)
+    }
+
     const createdUser = new User({
         email,
-        password,
+        password: hashPassword,
         name,
         image: req.file.path,
         places: [],
@@ -83,10 +91,16 @@ const login = async (req, res, next) => {
         return next(new HttpError('Login failed, try again!', 500))
     }
 
-    if (!correctUser || correctUser.password !== password) {
+    if (!correctUser) {
         return next(
             new HttpError('Could not identify user, something to be wrong', 500)
         )
+    }
+
+    const isValidPassword = bcrypt.compareSync(password, correctUser.password)
+
+    if (!isValidPassword) {
+        return next(new HttpError('Password is wrong, try again', 500))
     }
 
     res.status(200).json({
