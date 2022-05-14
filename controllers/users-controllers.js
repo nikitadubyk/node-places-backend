@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 const HttpError = require('../models/https-error')
 const { validationResult } = require('express-validator')
 const User = require('../models/user')
@@ -68,8 +69,24 @@ const createUser = async (req, res, next) => {
         const err = new HttpError('Signup failed, try again', 500)
         return next(err)
     }
+    let token
 
-    res.status(200).json({ user: createdUser.toObject({ getters: true }) })
+    token = jwt.sign(
+        {
+            userId: createdUser.id,
+            email: createdUser.email,
+        },
+        'private_key',
+        {
+            expiresIn: '1h',
+        }
+    )
+
+    res.status(200).json({
+        userId: createdUser.id,
+        email: createdUser.email,
+        token,
+    })
 }
 
 const login = async (req, res, next) => {
@@ -103,9 +120,23 @@ const login = async (req, res, next) => {
         return next(new HttpError('Password is wrong, try again', 500))
     }
 
+    let token
+
+    token = jwt.sign(
+        {
+            userId: correctUser.id,
+            email: correctUser.email,
+        },
+        'private_key',
+        {
+            expiresIn: '1h',
+        }
+    )
+
     res.status(200).json({
-        message: 'You loggin! Welcome!',
-        existingUser: correctUser.toObject({ getters: true }),
+        userId: correctUser.id,
+        email: correctUser.email,
+        token,
     })
 }
 
