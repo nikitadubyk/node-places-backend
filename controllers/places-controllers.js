@@ -134,6 +134,12 @@ const patchPlace = async (req, res, next) => {
         return next(err)
     }
 
+    if (place.creator.toString() !== req.userData.userId) {
+        return next(
+            new HttpError('You are not allowed to edit this place', 401)
+        )
+    }
+
     place.title = title
     place.description = description
 
@@ -169,17 +175,29 @@ const deletePlace = async (req, res, next) => {
         return next(new HttpError('Could not find a place with that id', 404))
     }
 
+    if (place.creator.id !== req.userData.userId) {
+        return next(
+            new HttpError('You are not allowed to delete this place', 401)
+        )
+    }
+
     const imagePath = place.image
 
     try {
         const sess = await mongoose.startSession()
-
         sess.startTransaction()
-        await place.remove({ session: sess })
+        await place.remove({
+            validateModifiedOnly: true,
+            session: sess,
+        })
         place.creator.places.pull(place)
-        await place.creator.save({ session: sess })
+        await place.creator.save({
+            validateModifiedOnly: true,
+            session: sess,
+        })
         await sess.commitTransaction()
     } catch (error) {
+        console.log(error)
         const err = new HttpError(
             'Something went wrong, could not delete place',
             500
